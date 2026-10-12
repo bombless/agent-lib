@@ -5,7 +5,9 @@ export { assertAllowed, runCodingTool, testHttpProxy } from './coding-tools.js';
 export { cdpCall, cdpListTargets, cdpVersion } from './cdp.js';
 export { AgentHelloSchema, AgentMessageSchema, AgentRequestSchema, AgentResponseSchema } from './protocol.js';
 export type { AgentHello, AgentMessage, AgentRequest, AgentResponse } from './protocol.js';
+export { geocodeLocation, runOpenMeteoTool } from './open-meteo.js';
 import { assertAllowed, runCodingTool } from './coding-tools.js';
+import { runOpenMeteoTool } from './open-meteo.js';
 
 export type AgentRuntimeOptions = { logCommand?: (command: string, cwd?: string) => void };
 
@@ -37,6 +39,10 @@ export async function runAgentTool(tool: string, args: Record<string, unknown> =
     }
     case 'get_system_info':
       return { hostname: os.hostname(), platform: process.platform, arch: process.arch, release: os.release(), workspace: path.resolve(process.env.AGENT_WORKSPACE ?? (process.platform === 'linux' ? '/tmp/mcp-agent-workspace' : 'D:\\\\mcp-agent-workspace')), commandExecutionEnabled: process.env.ALLOW_COMMAND_EXECUTION === 'true' };
+    case 'geocode_location':
+    case 'get_weather_forecast':
+    case 'get_historical_weather':
+      return await runOpenMeteoTool(tool, args);
     default: return await runCodingTool(tool, args, options.logCommand);
   }
 }
