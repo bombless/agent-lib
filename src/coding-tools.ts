@@ -159,7 +159,7 @@ export async function testHttpProxy(urlString: string, proxyHost = '127.0.0.1', 
     if (target.protocol === 'https:') {
       const targetPort = Number(target.port || 443);
       socket.write(
-        `CONNECT ${target.hostname}:${targetPort} HTTP/1.1\\r\\nHost: ${target.hostname}:${targetPort}\\r\\nProxy-Connection: Keep-Alive\\r\\nConnection: Keep-Alive\\r\\n\\r\\n`
+        `CONNECT ${target.hostname}:${targetPort} HTTP/1.1\r\nHost: ${target.hostname}:${targetPort}\r\nProxy-Connection: Keep-Alive\r\nConnection: Keep-Alive\r\n\r\n`
       );
       const connectResponse = await readHttpHeaders(socket, timeoutMs);
       if (connectResponse.status !== 200) {
@@ -193,7 +193,7 @@ export async function testHttpProxy(urlString: string, proxyHost = '127.0.0.1', 
       });
       const portSuffix = target.port ? `:${target.port}` : '';
       secureSocket.write(
-        `GET ${target.pathname || '/'}${target.search} HTTP/1.1\\r\\nHost: ${target.hostname}${portSuffix}\\r\\nConnection: close\\r\\nUser-Agent: chatgpt-mcp-proxy-test\\r\\nAccept: */*\\r\\n\\r\\n`
+        `GET ${target.pathname || '/'}${target.search} HTTP/1.1\r\nHost: ${target.hostname}${portSuffix}\r\nConnection: close\r\nUser-Agent: chatgpt-mcp-proxy-test\r\nAccept: */*\r\n\r\n`
       );
       const response = await readHttpHeaders(secureSocket, timeoutMs);
       return {
@@ -207,7 +207,7 @@ export async function testHttpProxy(urlString: string, proxyHost = '127.0.0.1', 
 
     const portSuffix = target.port ? `:${target.port}` : '';
     socket.write(
-      `GET ${target.href} HTTP/1.1\\r\\nHost: ${target.hostname}${portSuffix}\\r\\nConnection: close\\r\\nUser-Agent: chatgpt-mcp-proxy-test\\r\\nAccept: */*\\r\\n\\r\\n`
+      `GET ${target.href} HTTP/1.1\r\nHost: ${target.hostname}${portSuffix}\r\nConnection: close\r\nUser-Agent: chatgpt-mcp-proxy-test\r\nAccept: */*\r\n\r\n`
     );
     const response = await readHttpHeaders(socket, timeoutMs);
     return {
@@ -322,9 +322,12 @@ async function runPowerShell(args: Record<string, unknown>, logCommand?: Command
   const cwd = args.cwd ? stringArg(args, 'cwd') : WORKSPACE_ROOT;
   const workingDirectory = assertAllowed(cwd);
   const executable = process.env.POWERSHELL_EXE || 'powershell.exe';
+  // Windows PowerShell 5.1 may emit redirected stdout using the active OEM code page.
+  // execFile decodes as UTF-8, so force the PowerShell host and native-command pipe to UTF-8 first.
+  const utf8Script = "$utf8 = New-Object System.Text.UTF8Encoding($false); [Console]::OutputEncoding = $utf8; $OutputEncoding = $utf8; " + script;
   logCommand?.(`${executable} -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command <script>`, workingDirectory);
   try {
-    const result = await execFileAsync(executable, ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script], {
+    const result = await execFileAsync(executable, ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', utf8Script], {
       cwd: workingDirectory, windowsHide: true, timeout: COMMAND_TIMEOUT_MS, maxBuffer: MAX_OUTPUT_BYTES, shell: false, encoding: 'utf8'
     });
     return { stdout: result.stdout, stderr: result.stderr, code: 0 };
