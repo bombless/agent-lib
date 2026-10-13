@@ -315,6 +315,24 @@ function requireCommandExecution() {
   if (!ALLOW_COMMAND_EXECUTION) throw new Error('Command execution is disabled. Set ALLOW_COMMAND_EXECUTION=true on the agent to enable npm tools, run_python, run_node, git, apply_patch, and kill_process.');
 }
 
+async function runPowerShell(args: Record<string, unknown>, logCommand?: CommandLogger) {
+  requireCommandExecution();
+  if (process.platform !== 'win32') throw new Error('execute_powershell is only available on Windows');
+  const script = stringArg(args, 'command');
+  const cwd = args.cwd ? stringArg(args, 'cwd') : WORKSPACE_ROOT;
+  const workingDirectory = assertAllowed(cwd);
+  const executable = process.env.POWERSHELL_EXE || 'powershell.exe';
+  logCommand?.(`${executable} -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command <script>`, workingDirectory);
+  try {
+    const result = await execFileAsync(executable, ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script], {
+      cwd: workingDirectory, windowsHide: true, timeout: COMMAND_TIMEOUT_MS, maxBuffer: MAX_OUTPUT_BYTES, shell: false, encoding: 'utf8'
+    });
+    return { stdout: result.stdout, stderr: result.stderr, code: 0 };
+  } catch (error: any) {
+    return { stdout: String(error.stdout ?? ''), stderr: String(error.stderr ?? error.message ?? error), code: typeof error.code === 'number' ? error.code : typeof error.status === 'number' ? error.status : 1 };
+  }
+}
+
 function appendLimited(current: string, chunk: Buffer | string): { value: string; truncated: boolean } {
   const remaining = Math.max(0, MAX_OUTPUT_BYTES - Buffer.byteLength(current, 'utf8'));
   const text = Buffer.isBuffer(chunk) ? chunk.toString('utf8') : chunk;
@@ -590,6 +608,7 @@ async function applyPatch(args: Record<string, unknown>, logCommand?: CommandLog
 
 export async function runCodingTool(tool: string, args: Record<string, unknown>, logCommand?: CommandLogger): Promise<unknown> {
   switch (tool) {
+    case 'execute_powershell': return runPowerShell(args, logCommand);
     case 'npm_test': return runNpmTool('npm_test', args, logCommand);
     case 'npm_run': return runNpmTool('npm_run', args, logCommand);
     case 'npm_install': return runNpmTool('npm_install', args, logCommand);
