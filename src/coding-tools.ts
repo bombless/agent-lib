@@ -312,7 +312,25 @@ async function exec(command: string, args: string[], cwd?: string, timeout = COM
 }
 
 function requireCommandExecution() {
-  if (!ALLOW_COMMAND_EXECUTION) throw new Error('Command execution is disabled. Set ALLOW_COMMAND_EXECUTION=true on the agent to enable npm tools, run_python, run_node, git, apply_patch, and kill_process.');
+  if (!ALLOW_COMMAND_EXECUTION) throw new Error('Command execution is disabled. Set ALLOW_COMMAND_EXECUTION=true on the agent to enable execute_bash, execute_powershell, npm tools, run_python, run_node, git, apply_patch, and kill_process.');
+}
+
+async function runBash(args: Record<string, unknown>, logCommand?: CommandLogger) {
+  requireCommandExecution();
+  if (process.platform === 'win32') throw new Error('execute_bash is only available on Linux or macOS; use execute_powershell on Windows.');
+  const command = stringArg(args, 'command');
+  const cwd = args.cwd ? stringArg(args, 'cwd') : WORKSPACE_ROOT;
+  const workingDirectory = assertAllowed(cwd);
+  const executable = process.env.BASH_EXE || '/bin/bash';
+  logCommand?.(`${executable} -lc ${JSON.stringify(command)}`, workingDirectory);
+  try {
+    const result = await execFileAsync(executable, ['-lc', command], {
+      cwd: workingDirectory, windowsHide: true, timeout: COMMAND_TIMEOUT_MS, maxBuffer: MAX_OUTPUT_BYTES, shell: false, encoding: 'utf8'
+    });
+    return { stdout: result.stdout, stderr: result.stderr, code: 0 };
+  } catch (error: any) {
+    return { stdout: String(error.stdout ?? ''), stderr: String(error.stderr ?? error.message ?? error), code: typeof error.code === 'number' ? error.code : typeof error.status === 'number' ? error.status : 1 };
+  }
 }
 
 async function runPowerShell(args: Record<string, unknown>, logCommand?: CommandLogger) {
@@ -612,6 +630,7 @@ async function applyPatch(args: Record<string, unknown>, logCommand?: CommandLog
 export async function runCodingTool(tool: string, args: Record<string, unknown>, logCommand?: CommandLogger): Promise<unknown> {
   switch (tool) {
     case 'execute_powershell': return runPowerShell(args, logCommand);
+    case 'execute_bash': return runBash(args, logCommand);
     case 'npm_test': return runNpmTool('npm_test', args, logCommand);
     case 'npm_run': return runNpmTool('npm_run', args, logCommand);
     case 'npm_install': return runNpmTool('npm_install', args, logCommand);
