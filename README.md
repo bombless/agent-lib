@@ -42,3 +42,7 @@ runtime it delegates to) and add its MCP metadata to `src/mcp-tools.ts`.
 That keeps execution and public tool metadata in `agent-lib`; consumers that
 integrate `agentMcpTools` do not need a separate registration change for each
 new tool. Keep transport-specific tools in the consuming application.
+
+### Deterministic file editing
+
+The shared runtime exposes `read_file` with 1-based numbered lines and optional bounded ranges, plus `replace_lines` for exact inclusive line-range replacement. `replace_lines` refuses stale/mismatched content and preserves LF/CRLF line endings. Large unbounded reads return size/line-count metadata instead of dumping the whole file; configure limits with `MAX_READ_FILE_BYTES` and `MAX_READ_FILE_LINES`.
