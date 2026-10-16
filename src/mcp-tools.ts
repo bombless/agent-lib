@@ -52,6 +52,18 @@ export const agentMcpTools: AgentMcpToolDefinition[] = [
     resultFormat: 'screenshot-images',
   },
   {
+    name: 'get_screen_pixel',
+    description: 'Probe one display-relative pixel and return RGB channels and hex without sending screenshot image data into model context. Call get_screen_info first to select a display and learn its bounds.',
+    inputSchema: { screenIndex: z.number().int(), x: z.number().int(), y: z.number().int() },
+    outputSchema: z.object({
+      result: z.object({
+        screenIndex: z.number().int(), deviceName: z.string(), x: z.number(), y: z.number(),
+        absoluteX: z.number(), absoluteY: z.number(), r: z.number(), g: z.number(), b: z.number(),
+        hex: z.string(), format: z.string(), note: z.string(),
+      }),
+    }),
+  },
+  {
     name: 'get_system_info',
     description: 'Get basic system information from the connected agent.',
     inputSchema: {},
