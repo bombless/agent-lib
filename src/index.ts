@@ -4,6 +4,8 @@ import path from 'node:path';
 export { assertAllowed, runCodingTool, testHttpProxy } from './coding-tools.js';
 export { cdpCall, cdpListTargets, cdpVersion } from './cdp.js';
 export { AgentHelloSchema, AgentMessageSchema, AgentRequestSchema, AgentResponseSchema } from './protocol.js';
+export { agentMcpTools } from './mcp-tools.js';
+export type { AgentMcpToolDefinition } from './mcp-tools.js';
 export type { AgentHello, AgentMessage, AgentRequest, AgentResponse } from './protocol.js';
 import { assertAllowed, runCodingTool } from './coding-tools.js';
 
