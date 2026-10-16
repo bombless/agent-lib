@@ -53,8 +53,12 @@ function jpegPowerShellScript(x: number, y: number, width: number, height: numbe
   return "$ErrorActionPreference='Stop'; Add-Type -AssemblyName System.Drawing; " +
     "$bmp=New-Object System.Drawing.Bitmap(" + width + "," + height + "); " +
     "$g=[System.Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen(" + x + "," + y + ",0,0,$bmp.Size); " +
-    "$ms=New-Object System.IO.MemoryStream; $bmp.Save($ms,[System.Drawing.Imaging.ImageFormat]::Jpeg); " +
-    "[Console]::Write([Convert]::ToBase64String($ms.ToArray())); $ms.Dispose(); $g.Dispose(); $bmp.Dispose()";
+    "$scale=[Math]::Min(1.0,[Math]::Min(1000.0/" + width + ",1000.0/" + height + ")); " +
+    "$outW=[Math]::Max(1,[Math]::Round(" + width + "*$scale)); $outH=[Math]::Max(1,[Math]::Round(" + height + "*$scale)); " +
+    "$outBmp=New-Object System.Drawing.Bitmap($outW,$outH); $outG=[System.Drawing.Graphics]::FromImage($outBmp); " +
+    "$outG.DrawImage($bmp,0,0,$outW,$outH); $ms=New-Object System.IO.MemoryStream; " +
+    "$outBmp.Save($ms,[System.Drawing.Imaging.ImageFormat]::Jpeg); [Console]::Write([Convert]::ToBase64String($ms.ToArray())); " +
+    "$ms.Dispose(); $outG.Dispose(); $outBmp.Dispose(); $g.Dispose(); $bmp.Dispose()";
 }
 
 async function captureJpeg(x: number, y: number, width: number, height: number, minX: number, minY: number) {
