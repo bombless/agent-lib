@@ -8,7 +8,7 @@ export { agentMcpTools } from './mcp-tools.js';
 export type { AgentMcpToolDefinition } from './mcp-tools.js';
 export type { AgentHello, AgentMessage, AgentRequest, AgentResponse } from './protocol.js';
 import { assertAllowed, runCodingTool } from './coding-tools.js';
-import { getScreenInfo, takeScreenshot } from './screen-tools.js';
+import { getScreenInfo, getScreenPixel, takeScreenshot } from './screen-tools.js';
 
 export type AgentRuntimeOptions = { logCommand?: (command: string, cwd?: string) => void };
 
@@ -17,6 +17,7 @@ export async function runAgentTool(tool: string, args: Record<string, unknown> =
   switch (tool) {
     case 'get_screen_info': return await getScreenInfo();
     case 'take_screenshot': return await takeScreenshot(args);
+    case 'get_screen_pixel': return await getScreenPixel(args);
     case 'read_file': return await fs.readFile(assertAllowed(String(args.path ?? '')), 'utf8');
     case 'write_file': {
       const file = assertAllowed(String(args.path ?? ''));
