@@ -30,3 +30,15 @@ npm run build
 ```
 
 Node.js 20 or newer is required. This package is ESM and ships TypeScript declarations in `dist/`.
+
+## MCP tool registration
+
+The package exports `agentMcpTools`, a list of MCP-facing tool definitions
+(name, description, Zod input shape, and output schema). The `chatgpt-mcp`
+server registers these definitions automatically at startup.
+
+When adding a reusable tool, implement it in `runAgentTool()` (or the shared
+runtime it delegates to) and add its MCP metadata to `src/mcp-tools.ts`.
+That keeps execution and public tool metadata in `agent-lib`; consumers that
+integrate `agentMcpTools` do not need a separate registration change for each
+new tool. Keep transport-specific tools in the consuming application.
