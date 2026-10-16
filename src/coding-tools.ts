@@ -12,6 +12,7 @@ const MAX_OUTPUT_BYTES = Number(process.env.MAX_OUTPUT_BYTES ?? 1_000_000);
 const MAX_SEARCH_RESULTS = Number(process.env.MAX_SEARCH_RESULTS ?? 500);
 const COMMAND_TIMEOUT_MS = Number(process.env.COMMAND_TIMEOUT_MS ?? 120_000);
 const ALLOW_COMMAND_EXECUTION = process.env.ALLOW_COMMAND_EXECUTION === 'true';
+const ALLOW_NPM_EXECUTION = process.env.ALLOW_NPM_EXECUTION === 'true';
 const WORKSPACE_ROOT = path.resolve(process.env.AGENT_WORKSPACE ?? (process.platform === 'linux' ? '/tmp/mcp-agent-workspace' : 'D:\\mcp-agent-workspace'));
 
 type CommandLogger = (command: string, cwd?: string) => void;
@@ -315,6 +316,10 @@ function requireCommandExecution() {
   if (!ALLOW_COMMAND_EXECUTION) throw new Error('Command execution is disabled. Set ALLOW_COMMAND_EXECUTION=true on the agent to enable execute_bash, execute_powershell, npm tools, run_python, run_node, git, apply_patch, and kill_process.');
 }
 
+function requireNpmExecution() {
+  if (!ALLOW_COMMAND_EXECUTION && !ALLOW_NPM_EXECUTION) throw new Error('Npm execution is disabled. Set ALLOW_NPM_EXECUTION=true (or ALLOW_COMMAND_EXECUTION=true) on the agent to enable npm tools.');
+}
+
 async function runBash(args: Record<string, unknown>, logCommand?: CommandLogger) {
   requireCommandExecution();
   if (process.platform === 'win32') throw new Error('execute_bash is only available on Linux or macOS; use execute_powershell on Windows.');
@@ -476,7 +481,7 @@ function listPythonJobs() {
 }
 
 async function command(name: 'npm' | 'python' | 'node', args: Record<string, unknown>, logCommand?: CommandLogger) {
-  requireCommandExecution();
+  if (name === 'npm') requireNpmExecution(); else requireCommandExecution();
   const cwd = args.cwd ? stringArg(args, 'cwd') : WORKSPACE_ROOT;
   const commandArgs = Array.isArray(args.args) ? args.args.map(String) : [];
 
