@@ -13,9 +13,44 @@ export type AgentMcpToolDefinition = {
   description: string;
   inputSchema: Record<string, z.ZodType>;
   outputSchema: z.ZodType;
+  resultFormat?: 'screenshot-images';
 };
 
 export const agentMcpTools: AgentMcpToolDefinition[] = [
+  {
+    name: 'get_screen_info',
+    description: 'List all detected displays with index, device name, resolution, virtual-desktop coordinates, and primary-display status.',
+    inputSchema: {},
+    outputSchema: z.object({
+      result: z.object({
+        platform: z.string(),
+        screens: z.array(z.object({
+          index: z.number().int(), deviceName: z.string(), x: z.number(), y: z.number(),
+          width: z.number(), height: z.number(), primary: z.boolean(),
+        })),
+      }),
+    }),
+  },
+  {
+    name: 'take_screenshot',
+    description: 'Capture JPEG screenshots as image data for all displays, or one selected display. Optional x/y/width/height crop is display-relative and requires screenIndex.',
+    inputSchema: {
+      screenIndex: z.number().int().optional(),
+      x: z.number().int().optional(), y: z.number().int().optional(),
+      width: z.number().int().optional(), height: z.number().int().optional(),
+    },
+    outputSchema: z.object({
+      result: z.object({
+        screens: z.array(z.object({
+          index: z.number().int(), deviceName: z.string(), x: z.number(), y: z.number(),
+          width: z.number(), height: z.number(), primary: z.boolean(), captureX: z.number(),
+          captureY: z.number(), captureWidth: z.number(), captureHeight: z.number(),
+          mimeType: z.string(), data: z.string(), dataBytes: z.number(), dataSha256: z.string(),
+        })),
+      }),
+    }),
+    resultFormat: 'screenshot-images',
+  },
   {
     name: 'get_system_info',
     description: 'Get basic system information from the connected agent.',
