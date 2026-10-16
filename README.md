@@ -42,3 +42,9 @@ runtime it delegates to) and add its MCP metadata to `src/mcp-tools.ts`.
 That keeps execution and public tool metadata in `agent-lib`; consumers that
 integrate `agentMcpTools` do not need a separate registration change for each
 new tool. Keep transport-specific tools in the consuming application.
+
+### Command execution permissions
+
+- `ALLOW_COMMAND_EXECUTION=true` enables the general command-backed tools.
+- `ALLOW_NPM_EXECUTION=true` enables only the dedicated `npm_*` tools when general command execution remains disabled.
+- Enabling `ALLOW_COMMAND_EXECUTION` also permits npm tools; `ALLOW_NPM_EXECUTION` does not enable Python, Node, Git, shell, Gradle, or process-kill tools.
